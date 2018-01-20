@@ -26,8 +26,7 @@ function onPenDown (evt) {
 
     let loc = getPointerLocationForEvent(evt);
     [startX, startY, isDrawing] = [loc.offsetX, loc.offsetY, true];
-    let dPath = `${domPath.getAttribute("d")}
-    M${startX}, ${startY}`;
+    let dPath = `${domPath.getAttribute("d")} M${startX}, ${startY}`;
     domPath.setAttribute("d", dPath);
 
     if (window.PointerEvent) {
@@ -45,8 +44,7 @@ function onPenMove (evt) {
     console.log(evt.type, startX, startY);
     if (!isDrawing) return;
     let loc = getPointerLocationForEvent(evt);
-    let pathD = `${domPath.getAttribute("d")}
-    L${loc.offsetX}, ${loc.offsetY}`;
+    let pathD = `${domPath.getAttribute("d")} L${loc.offsetX}, ${loc.offsetY}`;
     domPath.setAttribute("d", pathD);
 
 }
@@ -63,11 +61,35 @@ function onPenUp (evt) {
         svgContainer.removeEventListener("mouseup", onPenUp, true);
         svgContainer.removeEventListener("mouseleave", onPenUp, true);
     }
+    fetch(location.protocol + "//" + location.hostname + ":9000" + "/savepath", {
+        method: "POST",
+        body: JSON.stringify({
+            pathd: domPath.getAttribute("d")
+        })
+    }).then(function (arg1) {
+        console.log("Success");
+    }).catch(function (arg1) {
+        console.log("ERROR");
+    });
 }
 
 function main () {  
     svgContainer.setAttribute("width", window.innerWidth);
     svgContainer.setAttribute("height", window.innerHeight);
+    fetch(location.protocol + "//" + location.hostname + ":9000" + "/savepath",{
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+    .then(function (res) {
+        if (res.statusText === "No Last Sign") return new Promise().reject();
+        return res.json();
+    })
+    .then(function (data) {
+        domPath.setAttribute("d", data.pathd);
+    })
+    .catch(function (res) {
+    });
     if (window.PointerEvent) {
         //Add pointer events
         svgContainer.addEventListener("pointerdown", onPenDown, true);
